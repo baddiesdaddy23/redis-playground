@@ -1,53 +1,27 @@
-##Summary of Improvements 
+## 🚀 Architectural Overhaul: From Single to Multi-DB
 
-The patched version introduces major functional, usability, and code quality upgrades. Key highlights include state persistence (so you don't lose your work), a fully functional and configurable persistence layer (AOF/RDB), and a vastly improved terminal with command history and autocomplete.
+The core of this update is the addition of MongoDB and Cassandra simulators, complete with independent parsers and in-memory storage.
 
-*🚀 Major Feature Enhancements*
-State Persistence: The entire Redis store (all data types) and persistence settings (AOF/RDB) are now saved to localStorage. Your data and settings will persist even after refreshing the page.
+* **Multi-Database Support:** The playground now features three fully sandboxed environments: **Redis**, **MongoDB**, and **Cassandra (CQL)**.
+* **DB-Switching UI:** The primary UI tabs now switch between active databases, not just data types.
+* **Command Routing:** A new router in the execution pipeline correctly routes user input to the appropriate parser (`execRedis`, `execMongo`, or `execCql`) based on the active tab.
 
-Configurable RDB Snapshots: The RDB (Redis Database) snapshot logic is no longer random.
+## ✨ New Features & UI/UX Improvements
 
-It is now correctly tied to a write operation counter (writesSinceLastSnapshot).
+To support the new architecture, the UI and feature set have been completely rebuilt.
 
-You can now configure the interval (e.g., "snapshot every 10 write ops") using the new input field.
+* **Import / Export:** Users can now export the *entire* state of all three databases to a single JSON file for backup or sharing, and re-import that file to restore their session.
+* **Zero-Dependency UI:** All external CDN dependencies (like Tailwind CSS) have been removed. The app is now styled with a clean, internal CSS stylesheet, making it a true single-file, offline-first application.
+* **Keyboard Shortcuts:**
+    * **`Ctrl+1` / `Ctrl+2` / `Ctrl+3`** to instantly switch between Redis, Mongo, and Cassandra.
+    * **`Esc`** to focus the command terminal.
+* **Copy-to-Clipboard Quick Start:** The "Quick Start" examples for all three databases are now clickable, allowing users to copy the test-command blocks to their clipboard.
+* **Unified Visualizer:** A new, single "Active DB Visualizer" panel dynamically adapts to show the most relevant high-level overview for the currently selected database (e.g., Redis keys, Mongo collections, or Cassandra tables).
 
-Expanded Command Support: Added several crucial and useful commands that were missing:
+## 🧹 Code Quality & Design
 
-EXISTS key [key ...] - Check if one or more keys exist.
+The underlying code has been refactored for professionalism and extensibility.
 
-TYPE key - Get the data type of a key.
-
-PERSIST key - Remove the Time-To-Live (TTL) from a key.
-
-SCAN cursor [MATCH pattern] - A safe, cursor-based alternative to KEYS for iterating the keyspace.
-
-HELP [COMMAND] - Get specific help for a single command.
-
-CLEAR - A playground-only helper to clear the terminal output.
-
-Updated Command Reference: The "Quick Reference" panel in the UI has been updated to include all these new commands.
-
-✨ User Experience (UX) & Usability
-Command History: You can now use the Up and Down arrow keys in the terminal to cycle through your command history.
-
-Command Autocomplete:
-
-Tab Completion: Pressing the Tab key will autocomplete the command you are typing (e.g., HSE -> HSET ).
-
-Command List: The input is now linked to a <datalist> for a dropdown of all available commands.
-
-Accessibility: Added a @media (prefers-reduced-motion: reduce) query to disable all animations and transitions for users who require it.
-
-Better Hints: The terminal now includes a "Tips" section explaining the new history, autocomplete, HELP, and CLEAR features.
-
-🐞 Bug Fixes & Corrected Logic
-Accurate AOF (Append-Only File) Logic: The AOF now correctly logs only write commands (e.g., SET, LPUSH, HDEL). The original version incorrectly logged all commands, including read commands like GET.
-
-Improved Ops/sec Metric: The "Operations/sec" counter no longer shows a spiky, inaccurate value. It now uses a 10-second sliding window to provide a stable and accurate 10-second average (avg) OPS.
-
-Deterministic RDB Logic: As noted above, the RDB trigger is now correctly based on a configurable write counter, not a random number.
-
-🧹 Code Quality & Best Practices
-Modern Event Handling: Removed all inline onclick="..." attributes from the HTML. Replaced them with a single, efficient delegated event listener on the main visualization panel. This is cleaner, more performant, and properly separates JavaScript from the markup.
-
-Better Abstraction: Introduced helper functions like setToggleUI to reduce code duplication and make the logic for updating the persistence buttons clearer and easier to maintain.
+* **New Storage Schema:** The `localStorage` schema has been upgraded to `dbPlayground:v2`, which namespaces all data by database (`:redis`, `:mongo`, etc.) and cleanly separates global settings.
+* **Legacy Migration Script:** This patch **includes a migration script** that automatically detects the previous `redisPlaygroundStateV2` data, converts it, and seamlessly migrates it into the new v2 schema. No data is lost for existing users.
+* **Robust TTL Sweepers:** The TTL logic is no longer just for Redis. The `setInterval` ticker now also runs sweepers for MongoDB (looking for an `expiresAt` field) and Cassandra (checking row-level TTLs), providing accurate expiration logic for all supported DBs.

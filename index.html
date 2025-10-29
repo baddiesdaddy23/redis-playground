@@ -1,1210 +1,238 @@
-<!-- index.html | Multi-DB In-Browser Playground -->
-<!-- Built to spec. Primary spec source (Playground Instructions.docx.pdf): 0 -->
-<!-- Reference consulted (previous Redis-only index.html): 1 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Multi-DB In-Browser Playground (Redis | MongoDB | Cassandra)</title>
-<style>
-  :root{
-    --bg:#0f1220;--panel:#171a2c;--panel-2:#1c2136;--muted:#8892a6;--text:#dbe3ff;
-    --accent:#6aa9ff;--accent-2:#66d9a8;--accent-3:#ff9d66;--accent-4:#f45b69;
-    --good:#7DDA58;--warn:#FFD166;--bad:#ef6f6c;--blue:#7aa2f7;--vio:#a78bfa;--yellow:#f6c177;--cyan:#8bd5ca;
-    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-    --radius:12px;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{margin:0;background:linear-gradient(180deg,#0d1020 0%,#0b0e1a 100%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif}
-  a{color:var(--accent)}
-  .wrap{max-width:1200px;margin:0 auto;padding:16px}
-  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
-  .brand{display:flex;align-items:center;gap:10px}
-  .logo{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--vio));box-shadow:0 0 0 2px rgba(255,255,255,0.05) inset}
-  h1{font-size:16px;letter-spacing:.4px;margin:0;color:#fff}
-  .tabs{display:flex;gap:6px;flex-wrap:wrap}
-  .tab{border:1px solid #2a3250;background:#13172a;color:#c9d3ff;padding:8px 12px;border-radius:999px;cursor:pointer}
-  .tab[aria-selected="true"]{background:linear-gradient(135deg,#1c2240,#15204a);border-color:#3a4a85;color:#fff;box-shadow:0 0 0 1px #42519b inset}
-  .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}
-  @media (max-width:1000px){.grid{grid-template-columns:1fr}}
-  .panel{background:var(--panel);border:1px solid #262c45;border-radius:var(--radius);box-shadow:0 12px 40px rgba(0,0,0,.25) inset, 0 1px 0 rgba(255,255,255,.03)}
-  .section{padding:14px}
-  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  .seg{display:flex;border:1px solid #2a3250;border-radius:999px;overflow:hidden}
-  .seg button{background:#12162a;color:#c8d1ff;border:0;padding:8px 12px;cursor:pointer}
-  .seg button[aria-pressed="true"]{background:#203064;color:#fff}
-  .row{display:flex;gap:10px}
-  .col{flex:1;min-width:0}
-  .terminal{height:360px;display:flex;flex-direction:column}
-  .out{flex:1;overflow:auto;background:#0b0e1f;border-radius:10px;padding:10px;border:1px solid #252b47;font-family:var(--mono);font-size:12.5px;line-height:1.45}
-  .line{white-space:pre-wrap;word-break:break-word}
-  .muted{color:var(--muted)}
-  .prompt{color:#83aaff}
-  .err{color:var(--bad)}
-  .ok{color:var(--good)}
-  .inp{display:flex;gap:8px;margin-top:8px}
-  .inp input{flex:1;border:1px solid #2a3250;background:#0b0e1f;color:#dbe3ff;border-radius:10px;padding:10px;font-family:var(--mono);font-size:13px;outline:none}
-  .btn{background:#1b2240;border:1px solid #2d3a6a;color:#cfe0ff;border-radius:10px;padding:10px 12px;cursor:pointer}
-  .btn:hover{filter:brightness(1.1)}
-  .btn.small{padding:6px 10px;border-radius:8px;font-size:12px}
-  .right{display:flex;flex-direction:column;gap:12px}
-  .kv{display:grid;grid-template-columns:1fr auto;gap:8px;font-family:var(--mono);font-size:12.5px}
-  .badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 8px;border:1px solid #2b3457;background:#13172b}
-  .i{width:8px;height:8px;border-radius:999px;background:#6775b6;display:inline-block}
-  .i.green{background:var(--good)} .i.blue{background:#7aa2f7} .i.orange{background:var(--yellow)} .i.red{background:var(--bad)}
-  .meter{height:8px;border-radius:999px;background:#111428;border:1px solid #263059;overflow:hidden}
-  .bar{height:100%;background:linear-gradient(90deg,#63d69a,#7aa2f7);width:0%}
-  .side-title{font-weight:600;color:#fff;margin:0 0 8px 0}
-  .mini{font-size:12px;color:var(--muted)}
-  .list{max-height:140px;overflow:auto;border:1px solid #273055;border-radius:8px;background:#0c1025;padding:8px;font-family:var(--mono);font-size:12px}
-  .list .ttl{color:#ffd166}
-  .kbd{font-family:var(--mono);border:1px solid #2a3250;background:#0b0f23;border-radius:6px;padding:2px 6px;margin:0 2px}
-  .pill{border:1px solid #2a3250;background:#0b0f23;border-radius:999px;padding:2px 8px}
-  .aof{max-height:120px;overflow:auto;border:1px solid #273055;border-radius:8px;background:#0c1025;padding:8px;font-family:var(--mono);font-size:12px}
-  .snapshot{font-family:var(--mono);font-size:12px;display:flex;flex-direction:column;gap:6px}
-  .snap{border:1px dashed #3a4a85;border-radius:8px;padding:6px;background:#0c1025}
-  details{background:var(--panel-2);border:1px solid #2a3250;border-radius:10px;padding:10px}
-  summary{cursor:pointer;color:#cfe0ff}
-  .flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .sp{flex:1}
-  .vis{border:1px solid #29335a;border-radius:10px;background:#0b0f23;padding:10px}
-  .table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px}
-  .table th,.table td{border:1px solid #2a3250;padding:6px;vertical-align:top}
-  .table th{background:#14193a;color:#cfe0ff}
-  .table caption{color:var(--muted);text-align:left;margin-bottom:6px}
-  input[type="file"]{display:none}
-  .hint{font-size:12px;color:var(--muted)}
-  @media (prefers-reduced-motion: reduce){
-    *{animation:none!important;transition:none!important}
-  }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Multi-DB Playground — Redis • MongoDB • Cassandra (V3.0)</title>
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-<div class="wrap" id="app">
-  <header>
-    <div class="brand" aria-label="Playground header">
-      <div class="logo" aria-hidden="true"></div>
-      <div>
-        <h1>Multi-DB Playground — Redis • MongoDB • Cassandra</h1>
-        <div class="hint">Single-file, localStorage-backed, no servers/CDNs. Shortcuts: <span class="kbd">Ctrl+1</span>/<span class="kbd">Ctrl+2</span>/<span class="kbd">Ctrl+3</span> switch DB • <span class="kbd">Esc</span> focus terminal</div>
-      </div>
-    </div>
-    <nav class="tabs" role="tablist" aria-label="Database selector">
-      <button class="tab" role="tab" id="tab-redis" aria-selected="true" data-db="redis">Redis</button>
-      <button class="tab" role="tab" id="tab-mongo" aria-selected="false" data-db="mongo">MongoDB</button>
-      <button class="tab" role="tab" id="tab-cassandra" aria-selected="false" data-db="cassandra">Cassandra</button>
-    </nav>
-  </header>
-
-  <div class="grid">
-    <!-- LEFT: Terminal & Quick Start -->
-    <section class="panel section col">
-      <div class="toolbar" role="group" aria-label="Controls">
-        <div class="seg" aria-label="Persistence toggles">
-          <button id="aofToggle" aria-pressed="false" title="Toggle AOF log (global)">AOF</button>
-          <button id="rdbToggle" aria-pressed="false" title="Toggle Redis RDB snapshots">RDB</button>
-        </div>
-        <label class="badge" title="Snapshot after N writes (Redis)">
-          <span class="i orange" aria-hidden="true"></span>
-          <span>RDB threshold</span>
-          <input id="rdbThreshold" type="number" min="1" value="10" style="width:64px;margin-left:6px;background:#0b0f23;border:1px solid #2a3250;color:#fff;border-radius:6px;padding:2px 6px" />
-        </label>
-        <span class="badge" title="Operations/sec (10s window)">
-          <span class="i blue"></span><span>ops/sec:</span>
-          <strong id="opsMeter">0.0</strong>
-        </span>
-        <span class="badge" title="Live count for active DB"><span class="i green"></span><span id="liveCount">0</span></span>
-        <span class="sp"></span>
-        <button class="btn small" id="exportBtn" title="Export state as JSON">Export</button>
-        <label class="btn small" for="importFile" title="Import exported state JSON">Import</label>
-        <input id="importFile" type="file" accept="application/json" />
-      </div>
-
-      <div class="row" style="margin-top:10px">
-        <div class="col terminal" aria-label="Terminal">
-          <div id="output" class="out" aria-live="polite" aria-label="Command output">
-            <div class="line muted">redis&gt; Ready. Type <span class="pill">HELP</span> for supported commands. Type <span class="pill">CLEAR</span> to clear terminal.</div>
+  <div class="wrap" id="app">
+    <header>
+      <div class="brand" aria-label="Playground header">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>Multi-DB Playground — Redis • MongoDB • Cassandra</h1>
+          <div class="hint">
+            Single-file modules, localStorage-backed. Shortcuts:
+            <span class="kbd">Ctrl+1</span>/<span class="kbd">Ctrl+2</span>/<span class="kbd">Ctrl+3</span> switch DB •
+            <span class="kbd">Esc</span> focus terminal
           </div>
-          <div class="inp">
-            <input id="cmd" list="suggest" autocomplete="off" placeholder="Enter command (routes to the active DB)" aria-label="Command input" />
-            <button id="run" class="btn" title="Execute">Run</button>
-          </div>
-          <datalist id="suggest"></datalist>
-          <div class="hint" style="margin-top:6px">History: ↑/↓ • Autocomplete: Tab • CLEAR clears terminal • HELP [COMMAND] for usage</div>
         </div>
-        <div class="col">
-          <details open>
-            <summary>Quick Start (copy/paste into terminal to smoke test)</summary>
-            <div style="margin-top:8px"></div>
-            <div class="vis">
-              <strong>Redis (≥10 lines)</strong>
-              <pre id="qs-redis" class="list" aria-label="Redis quick start">
+      </div>
+      <nav class="tabs" role="tablist" aria-label="Database selector">
+        <button class="tab" role="tab" id="tab-redis" aria-selected="true"  data-db="redis">Redis</button>
+        <button class="tab" role="tab" id="tab-mongo" aria-selected="false" data-db="mongo">MongoDB</button>
+        <button class="tab" role="tab" id="tab-cassandra" aria-selected="false" data-db="cassandra">Cassandra</button>
+      </nav>
+    </header>
+
+    <div class="grid">
+      <!-- LEFT: Terminal & Quick Start -->
+      <section class="panel section col">
+        <div class="toolbar" role="group" aria-label="Controls">
+          <div class="seg" aria-label="Persistence toggles" id="redisControls">
+            <button id="aofToggle" aria-pressed="false" title="Toggle AOF log (global)">AOF</button>
+            <button id="rdbToggle" aria-pressed="false" title="Toggle Redis RDB snapshots">RDB</button>
+            <label class="badge" title="Snapshot after N writes (Redis)">
+              <span class="i orange" aria-hidden="true"></span>
+              <span>RDB threshold</span>
+              <input id="rdbThreshold" type="number" min="1" value="10" class="num sm" />
+            </label>
+          </div>
+
+          <label class="badge" title="Operations/sec (10s window)">
+            <span class="i blue"></span><span>ops/sec:</span>
+            <strong id="opsMeter">0.0</strong>
+          </label>
+          <span class="badge" title="Live count for active DB"><span class="i green"></span><span id="liveCount">0</span></span>
+          <span class="badge" id="quotaBadge" title="Approx storage footprint">
+            <span class="i cyan"></span>Storage
+            <span id="storageText" class="mini">0 KB</span>
+          </span>
+
+          <span class="sp"></span>
+
+          <!-- Consolidated menu -->
+          <div class="menu">
+            <button class="btn small" id="dataMenuBtn" aria-haspopup="true" aria-expanded="false">Data ▾</button>
+            <div class="menu-pop" id="dataMenu" role="menu" aria-label="Data menu">
+              <div class="menu-group">
+                <div class="menu-title">Seed ▾</div>
+                <div class="submenu">
+                  <button data-seed="redis">Redis: list:groceries</button>
+                  <button data-seed="mongo">Mongo: school.students</button>
+                  <button data-seed="cassandra">Cassandra: demo.users</button>
+                </div>
+              </div>
+              <hr />
+              <button id="exportAllBtn">Export All</button>
+              <label for="importAllFile" class="filelike">Import All</label>
+              <input id="importAllFile" type="file" accept="application/json" />
+              <hr />
+              <button id="exportDbBtn">Export Active DB</button>
+              <label for="importDbFile" class="filelike">Import into Active DB</label>
+              <input id="importDbFile" type="file" accept="application/json" />
+              <hr />
+              <button id="openCrudGuide">Open CRUD Guide</button>
+              <hr />
+              <button id="hardResetBtn" class="danger">Hard Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div class="col terminal" aria-label="Terminal">
+            <div id="output" class="out" aria-live="polite" aria-label="Command output">
+              <div class="line muted">redis&gt; Ready. Type <span class="pill">HELP</span> for supported commands. Type <span class="pill">CLEAR</span> to clear terminal.</div>
+            </div>
+            <div class="inp">
+              <input id="cmd" list="suggest" autocomplete="off" placeholder="redis&gt;" aria-label="Command input" />
+              <button id="run" class="btn" title="Execute">Run</button>
+            </div>
+            <datalist id="suggest"></datalist>
+            <div class="hint" style="margin-top:6px">History: ↑/↓ • Autocomplete: Tab • CLEAR clears terminal • HELP [COMMAND] for usage</div>
+          </div>
+          <div class="col">
+            <details open>
+              <summary>Quick Start (copy/paste into terminal to smoke test)</summary>
+              <div style="margin-top:8px"></div>
+              <div class="vis">
+                <strong>Redis (≥10 lines)</strong>
+                <pre id="qs-redis" class="list" aria-label="Redis quick start">
 SET course "databases"
 GET course
 LPUSH list:groceries milk eggs bread
 LRANGE list:groceries 0 -1
 SADD set:tags redis nosql fun
-SMEMBERS set:tags
-HSET hash:user name "Ada" lang "EN"
-HGETALL hash:user
-EXPIRE course 5
-TTL course
-SCAN 0 MATCH list:*
-CLEAR
-              </pre>
-            </div>
-            <div class="vis" style="margin-top:8px">
-              <strong>MongoDB (≥5 lines)</strong>
-              <pre id="qs-mongo" class="list" aria-label="Mongo quick start">
+SCARD set:tags
+SISMEMBER set:tags redis
+ZADD leaderboard 1500 Alice 2300 Bob 1800 Charlie 2100 Diana
+ZRANGE leaderboard 0 -1 WITHSCORES
+PUBLISH news "hello world"
+SUBSCRIBE news
+                </pre>
+              </div>
+              <div class="vis" style="margin-top:8px">
+                <strong>MongoDB (≥5 lines)</strong>
+                <pre id="qs-mongo" class="list" aria-label="Mongo quick start">
 use school
-db.students.insertOne({"name":"Sam","grade":3,"expiresAt": 32503680000000})
-db.students.find({"grade":{"$gt":2}})
-db.students.updateOne({"name":"Sam"},{"$set":{"grade":4}})
-db.students.count()
-              </pre>
-            </div>
-            <div class="vis" style="margin-top:8px">
-              <strong>Cassandra (≥5 lines)</strong>
-              <pre id="qs-cql" class="list" aria-label="Cassandra quick start">
+db.students.insertMany([{"name":"Sam","grade":3,"expiresAt": 32503680000000},{"name":"Ada","grade":4,"skills":["db","js"]}])
+db.students.find({"$or":[{"grade":{"$gte":4}},{"name":{"$in":["Sam"]}}]},{"name":1,"grade":1}).limit(5)
+db.students.aggregate([{"$match":{"grade":{"$gte":3}}},{"$group":{"_id":"$grade","total":{"$sum":1},"avgGrade":{"$avg":"$grade"},"names":{"$push":"$name"}}}]).limit(10)
+db.students.updateOne({"name":"Sam"},{"$inc":{"grade":1},"$push":{"skills":"redis"}})
+                </pre>
+              </div>
+              <div class="vis" style="margin-top:8px">
+                <strong>Cassandra (≥5 lines)</strong>
+                <pre id="qs-cql" class="list" aria-label="Cassandra quick start">
 CREATE KEYSPACE demo WITH replication = {"class":"SimpleStrategy","replication_factor":1};
 USE demo;
 CREATE TABLE users (id int, name text, created timestamp, PRIMARY KEY (id));
+CREATE INDEX ON users (name);
 INSERT INTO users (id,name,created) VALUES (1,'Eve',1690000000000) USING TTL 3;
-SELECT * FROM users WHERE id = 1;
-              </pre>
+SELECT * FROM users LIMIT 5;
+SELECT * FROM users WHERE name = 'Eve';
+                </pre>
+              </div>
+              <div class="hint" style="margin-top:6px">Tip: Click any block to copy; then paste into terminal.</div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: Side panels (status + visualizer) -->
+      <aside class="right">
+        <section class="panel section">
+          <h3 class="side-title">Persistence & Metrics</h3>
+          <div class="flex">
+            <span class="badge" title="AOF status"><span id="aofDot" class="i"></span>AOF <span id="aofStatus" class="mini">off</span></span>
+            <span class="badge" id="rdbBadge" title="Redis snapshots"><span id="rdbDot" class="i"></span>RDB <span id="rdbStatus" class="mini">off</span></span>
+            <span class="badge" title="AOF cap (per DB)">
+              <span class="i cyan"></span>AOF cap
+              <input id="aofCapInput" type="number" min="50" value="800" class="num" />
+            </span>
+            <span class="badge" id="snapCapWrap" title="Snapshot cap (Redis only)">
+              <span class="i orange"></span>Snap cap
+              <input id="snapCapInput" type="number" min="1" value="8" class="num sm" />
+            </span>
+          </div>
+          <div class="meter" style="margin-top:8px"><div class="bar" id="opsBar"></div></div>
+          <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+              <div class="mini">AOF Log — active DB</div>
+              <div id="aofLog" class="aof" aria-label="Append-only log"></div>
             </div>
-            <div class="hint" style="margin-top:6px">Tip: Click any block to copy; then paste into terminal.</div>
-          </details>
+            <div>
+              <div class="mini">Redis Snapshots (simulated)</div>
+              <div id="snapshots" class="snapshot" aria-label="RDB snapshots"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel section">
+          <h3 class="side-title">Active DB Visualizer</h3>
+          <div id="viz" class="vis" aria-live="polite"></div>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <!-- CRUD Guide Modal -->
+  <div class="modal" id="crudModal" role="dialog" aria-modal="true" aria-labelledby="crudTitle">
+    <div class="card">
+      <div class="hd">
+        <strong id="crudTitle">CRUD Guide</strong>
+        <button class="btn small" id="crudClose">Close</button>
+      </div>
+      <div class="bd">
+        <div class="chips" role="tablist">
+          <button class="chip" data-tab="g-redis" aria-selected="true">Redis</button>
+          <button class="chip" data-tab="g-mongo" aria-selected="false">MongoDB</button>
+          <button class="chip" data-tab="g-cassandra" aria-selected="false">Cassandra</button>
+        </div>
+        <div style="height:8px"></div>
+        <div id="g-redis" class="code">
+SET user:1 "Ada"
+GET user:1
+HSET profile:1 name "Ada" lang "EN"
+HGETALL profile:1
+LPUSH queue jobs:1 jobs:2
+LRANGE queue 0 -1
+SADD tags redis nosql
+SMEMBERS tags
+ZADD leaderboard 100 "Ada" 150 "Bob"
+ZRANGE leaderboard 0 -1 WITHSCORES
+PUBLISH updates "hello"
+SUBSCRIBE updates
+        </div>
+        <div id="g-mongo" class="code" style="display:none">
+use app
+db.items.insertOne({"name":"Widget","price":12.5,"stock":10})
+db.items.find({"$and":[{"price":{"$gte":10}},{"stock":{"$gt":0}}]},{"name":1,"price":1}).limit(3)
+db.items.aggregate([{"$match":{"stock":{"$gt":0}}},{"$group":{"_id":"$price","count":{"$sum":1},"avg":{"$avg":"$price"},"items":{"$push":"$name"}}}]).limit(5)
+db.items.updateOne({"name":"Widget"},{"$inc":{"stock":5},"$rename":{"price":"unit_price"}})
+db.items.find({"unit_price":{"$lte":20}},{"_id":0,"name":1,"unit_price":1})
+        </div>
+        <div id="g-cassandra" class="code" style="display:none">
+CREATE KEYSPACE demo WITH replication = {"class":"SimpleStrategy","replication_factor":1};
+USE demo;
+CREATE TABLE products (id int, name text, created timestamp, PRIMARY KEY (id));
+CREATE INDEX ON products (name);
+INSERT INTO products (id,name,created) VALUES (1,'Widget',1690000000000);
+SELECT name FROM products WHERE id IN (1,2);
+-- Indexed non-PK query:
+SELECT * FROM products WHERE name = 'Widget';
+-- Table scan preview:
+SELECT * FROM products LIMIT 5;
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:8px">
+          <button class="btn small" id="copyGuide">Copy</button>
         </div>
       </div>
-    </section>
-
-    <!-- RIGHT: Side panels (status + visualizer) -->
-    <aside class="right">
-      <section class="panel section">
-        <h3 class="side-title">Persistence & Metrics</h3>
-        <div class="flex">
-          <span class="badge" title="AOF status"><span id="aofDot" class="i"></span>AOF <span id="aofStatus" class="mini">off</span></span>
-          <span class="badge" title="Redis snapshots"><span id="rdbDot" class="i"></span>RDB <span id="rdbStatus" class="mini">off</span></span>
-          <span class="badge" title="Storage footprint">
-            <span class="i cyan"></span>Storage
-            <span id="storageText" class="mini">0 KB</span>
-          </span>
-        </div>
-        <div class="meter" style="margin-top:8px"><div class="bar" id="opsBar"></div></div>
-        <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div>
-            <div class="mini">AOF Log (writes only)</div>
-            <div id="aofLog" class="aof" aria-label="Append-only log"></div>
-          </div>
-          <div>
-            <div class="mini">Redis Snapshots (simulated)</div>
-            <div id="snapshots" class="snapshot" aria-label="RDB snapshots"></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel section">
-        <h3 class="side-title">Active DB Visualizer</h3>
-        <div id="viz" class="vis" aria-live="polite"></div>
-      </section>
-    </aside>
+    </div>
   </div>
-</div>
 
-<script type="module">
-/* =============================================================================
-   Multi-DB In-Browser Playground
-   - Single file, zero network, no eval, localStorage persistence
-   - Buckets:
-       dbPlayground:v2           (root meta)
-       dbPlayground:v2:redis     (Redis dataset/settings)
-       dbPlayground:v2:mongo     (Mongo dataset/settings)
-       dbPlayground:v2:cassandra (Cassandra dataset/settings)
-   - AOF is global; Redis-only RDB snapshot simulation (threshold-based)
-   - Ops/sec (10s window) per active DB; keyboard a11y + reduced motion
-   ----------------------------------------------------------------------------- */
-/** Utilities ******************************************************************/
-const $ = sel => document.querySelector(sel);
-const el = (tag, props={}, ...children) => {
-  const n = document.createElement(tag);
-  Object.entries(props).forEach(([k,v])=>{
-    if(k==='class') n.className=v;
-    else if(k==='html') n.innerHTML=v;
-    else if(k==='text') n.textContent=v;
-    else if(k.startsWith('on') && typeof v==='function') n.addEventListener(k.substring(2), v);
-    else n.setAttribute(k, v);
-  });
-  children.forEach(c => n.append(c));
-  return n;
-};
-const nowIso = () => new Date().toISOString();
-const deepClone = obj => JSON.parse(JSON.stringify(obj));
-const fmtBytes = n => (n/1024).toFixed(2)+' KB';
-const clamp = (n,min,max)=>Math.max(min,Math.min(max,n));
-function measureStorageBytes(obj){
-  try { return new Blob([JSON.stringify(obj)]).size; } catch { return JSON.stringify(obj||{}).length; }
-}
-/** Persistent Store ************************************************************/
-const ROOT_KEY = 'dbPlayground:v2';
-const BUCKET = {
-  redis: 'dbPlayground:v2:redis',
-  mongo: 'dbPlayground:v2:mongo',
-  cassandra: 'dbPlayground:v2:cassandra'
-};
-// Create root if missing
-function ensureRoot(){
-  const existing = localStorage.getItem(ROOT_KEY);
-  if(existing) return JSON.parse(existing);
-  const root = { formatVersion:2, createdAt: nowIso(), updatedAt: nowIso(), global:{ aof:false, rdb:{enabled:false, threshold:10} }, aofLog:[], snapshots:[] };
-  localStorage.setItem(ROOT_KEY, JSON.stringify(root));
-  return root;
-}
-// Create bucket if missing
-function ensureBucket(key, initData){
-  const existing = localStorage.getItem(key);
-  if(existing) return JSON.parse(existing);
-  const bucket = { formatVersion:2, createdAt: nowIso(), updatedAt: nowIso(), data: initData||{}, settings:{} };
-  localStorage.setItem(key, JSON.stringify(bucket));
-  return bucket;
-}
-let root = ensureRoot();
-
-// --- Migration from obvious legacy (Redis-only from reference) ----------------
-(function migrateLegacy(){
-  try{
-    if(!localStorage.getItem(BUCKET.redis)){
-      const legacy = localStorage.getItem('redisPlaygroundStateV2'); // seen in reference file
-      if(legacy){
-        const L = JSON.parse(legacy);
-        const mapped = {
-          strings: L.strings||{},
-          lists: L.lists||{},
-          sets: (L.sets? Object.fromEntries(Object.entries(L.sets).map(([k,arr])=>[k, Array.from(arr)])) : {}),
-          hashes: L.hashes||{},
-          zsets: L.zsets||{},
-          ttl: L.ttl||{}
-        };
-        const rdb = { formatVersion:2, createdAt: nowIso(), updatedAt: nowIso(), data: mapped, settings: { rdbInterval: L.rdbInterval||10, aofEnabled: !!L.aofEnabled, rdbEnabled: !!L.rdbEnabled } };
-        localStorage.setItem(BUCKET.redis, JSON.stringify(rdb));
-        // Carry over global toggles where sensible
-        root.global.aof = !!L.aofEnabled;
-        root.global.rdb = { enabled: !!L.rdbEnabled, threshold: Math.max(1, Number(L.rdbInterval||10)) };
-        root.updatedAt = nowIso();
-        localStorage.setItem(ROOT_KEY, JSON.stringify(root));
-      }
-    }
-  }catch{/* safe no-op */}
-})();
-// Buckets (init)
-let redisBucket = ensureBucket(BUCKET.redis, { strings:{}, lists:{}, sets:{}, hashes:{}, zsets:{}, ttl:{} });
-let mongoBucket = ensureBucket(BUCKET.mongo, { databases:{ default:{ collections:{} } }, currentDb:'default' });
-let cassBucket  = ensureBucket(BUCKET.cassandra, { keyspaces:{ system:{ tables:{} } }, currentKs:'system' });
-
-function saveRoot(){ root.updatedAt = nowIso(); localStorage.setItem(ROOT_KEY, JSON.stringify(root)); }
-function saveBucket(name){
-  const key = BUCKET[name];
-  const obj = (name==='redis'? redisBucket : name==='mongo'? mongoBucket : cassBucket);
-  obj.updatedAt = nowIso();
-  localStorage.setItem(key, JSON.stringify(obj));
-}
-/** Global UI State *************************************************************/
-let activeDB = 'redis';
-const history = [];
-let histIndex = 0;
-const opsWindow = { redis:[], mongo:[], cassandra:[] }; // timestamps per DB (ms)
-const AOF_LIMIT = 800;
-const SNAP_LIMIT = 8;
-
-/** Terminal Output *************************************************************/
-const output = $('#output');
-function print(type, text){
-  const line = el('div',{class:'line '+(type||'')});
-  line.textContent = text;
-  output.append(line);
-  output.scrollTop = output.scrollHeight;
-  while(output.children.length>400) output.removeChild(output.firstChild);
-}
-function promptLabel(){
-  return (activeDB==='redis'?'redis> ':activeDB==='mongo'?'mongo> ':'cql> ');
-}
-function clearTerminal(){
-  output.innerHTML = '';
-  print('muted', promptLabel()+'Ready. Type HELP for supported commands. Type CLEAR to clear terminal.');
-}
-
-/** AOF / RDB *******************************************************************/
-function logAOF(prefix, text){
-  if(!root.global.aof) return;
-  const line = `[${prefix}] ${text}`;
-  root.aofLog.unshift({ t: Date.now(), line });
-  if(root.aofLog.length>AOF_LIMIT) root.aofLog.pop();
-  saveRoot(); renderAOF();
-}
-function addSnapshot(){
-  if(!root.global.rdb?.enabled) return;
-  // snapshot stable copy of Redis data only
-  const snap = { t: Date.now(), data: deepClone(redisBucket.data) };
-  root.snapshots.unshift(snap);
-  if(root.snapshots.length>SNAP_LIMIT) root.snapshots.pop();
-  saveRoot(); renderSnapshots();
-}
-
-/** Metrics *********************************************************************/
-const OPS_MS = 10_000;
-function recordOp(db){ // call for any op (read or write) so the user sees activity
-  const arr = opsWindow[db]; const now = Date.now();
-  arr.push(now);
-  while(arr.length && now - arr[0] > OPS_MS) arr.shift();
-  if(db===activeDB) updateOpsUI();
-}
-function updateOpsUI(){
-  const arr = opsWindow[activeDB];
-  const span = arr.length ? (arr[arr.length-1] - arr[0]) : 1;
-  const opsPerSec = span>0 ? (arr.length/(span/1000)) : 0;
-  $('#opsMeter').textContent = opsPerSec.toFixed(1);
-  $('#opsBar').style.width = clamp(opsPerSec*10,0,100)+'%';
-}
-/** Storage footprint meter *****************************************************/
-function updateStorageUI(){
-  const all = {
-    root, redis: redisBucket, mongo: mongoBucket, cassandra: cassBucket
-  };
-  $('#storageText').textContent = fmtBytes(measureStorageBytes(all));
-}
-
-/** Keyboard & a11y *************************************************************/
-const cmd = $('#cmd');
-const runBtn = $('#run');
-cmd.addEventListener('keydown', (e)=>{
-  if(e.key==='Enter'){ e.preventDefault(); runCurrent(); }
-  else if(e.key==='ArrowUp'){ if(history.length){ e.preventDefault(); histIndex = Math.max(0, histIndex-1); cmd.value = history[histIndex] || ''; } }
-  else if(e.key==='ArrowDown'){ if(history.length){ e.preventDefault(); histIndex = Math.min(history.length, histIndex+1); cmd.value = history[histIndex] || ''; if(histIndex===history.length) cmd.value=''; } }
-  else if(e.key==='Tab'){ e.preventDefault(); autocomplete(); }
-});
-document.addEventListener('keydown',(e)=>{
-  if(e.key==='Escape'){ cmd.focus(); cmd.select(); }
-  // Ctrl+1/2/3 switch DB
-  if(e.ctrlKey && !e.shiftKey && !e.altKey){
-    if(e.key==='1'){ switchDB('redis'); }
-    else if(e.key==='2'){ switchDB('mongo'); }
-    else if(e.key==='3'){ switchDB('cassandra'); }
-  }
-});
-runBtn.addEventListener('click', runCurrent);
-function runCurrent(){
-  const text = cmd.value.trim();
-  if(!text) return;
-  execute(text);
-  if(history[history.length-1]!==text) history.push(text);
-  histIndex = history.length;
-  cmd.value = '';
-}
-
-/** Suggestions *****************************************************************/
-const SUG_REDIS = [
- 'SET','GET','DEL','EXISTS','TYPE','PERSIST','EXPIRE','TTL','HSET','HGET','HGETALL',
- 'LPUSH','RPUSH','LRANGE','SADD','SMEMBERS','SCAN','HELP','CLEAR'
-];
-const SUG_MONGO = [
- 'use <dbname>',
- 'db.<collection>.insertOne({...})',
- 'db.<collection>.insertMany([{...},{...}])',
- 'db.<collection>.find({},{})',
- 'db.<collection>.updateOne(filter,{"$set":{...}})',
- 'db.<collection>.deleteOne({...})',
- 'db.<collection>.count()',
- 'db.<collection>.createIndex({"field":1})',
- 'HELP','CLEAR'
-];
-const SUG_CQL = [
- 'CREATE KEYSPACE ks WITH replication = {...};',
- 'USE ks;',
- 'CREATE TABLE t (col type, ..., PRIMARY KEY (pk));',
- 'INSERT INTO t (cols...) VALUES (...) USING TTL <sec>;',
- 'SELECT cols FROM t WHERE pk = ...;',
- 'DELETE FROM t WHERE pk = ...;',
- 'ALTER TABLE t ADD col type;',
- 'HELP','CLEAR'
-];
-function refreshSuggestions(){
-  const dl = $('#suggest'); dl.innerHTML='';
-  const list = activeDB==='redis'? SUG_REDIS : activeDB==='mongo'? SUG_MONGO : SUG_CQL;
-  list.forEach(v=> dl.append(el('option',{value:v})));
-}
-function autocomplete(){
-  const list = activeDB==='redis'? SUG_REDIS : activeDB==='mongo'? SUG_MONGO : SUG_CQL;
-  const first = cmd.value.trim().toUpperCase();
-  if(!first) return;
-  const match = list.find(s => s.toUpperCase().startsWith(first));
-  if(match){ cmd.value = match; }
-}
-
-/** Tabs ************************************************************************/
-document.querySelectorAll('.tab').forEach(t=>{
-  t.addEventListener('click', ()=>switchDB(t.dataset.db));
-});
-function switchDB(db){
-  if(activeDB===db) return;
-  activeDB = db;
-  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected', String(t.dataset.db===db)));
-  // change prompt hint line
-  print('muted', promptLabel()+'Switched database.');
-  // refresh sug + ops ui + visualizer + counts
-  refreshSuggestions(); updateOpsUI(); updateLiveCount(); renderVisualizer();
-  // Set header line in terminal
-}
-refreshSuggestions();
-
-/** AOF & RDB toggles ***********************************************************/
-function setAOF(enabled){
-  root.global.aof = !!enabled; saveRoot();
-  $('#aofDot').className = 'i '+(enabled?'blue':'');
-  $('#aofStatus').textContent = enabled?'on':'off';
-}
-function setRDB(enabled){
-  root.global.rdb.enabled = !!enabled; saveRoot();
-  $('#rdbDot').className = 'i '+(enabled?'orange':'');
-  $('#rdbStatus').textContent = enabled?('every '+root.global.rdb.threshold+' writes'):'off';
-}
-$('#aofToggle').addEventListener('click', ()=>{ const v=!root.global.aof; setAOF(v); });
-$('#rdbToggle').addEventListener('click', ()=>{ const v=!(root.global.rdb?.enabled); setRDB(v); });
-$('#rdbThreshold').addEventListener('change', e=>{
-  const n = parseInt(e.target.value,10); root.global.rdb.threshold = isFinite(n)&&n>0?n:10; e.target.value = root.global.rdb.threshold; saveRoot(); setRDB(root.global.rdb.enabled);
-});
-
-/** Redis Simulator *************************************************************/
-// Data structures kept in redisBucket.data
-// shapes: strings{}, lists{}, sets{}, hashes{}, zsets{}, ttl{}
-function rType(key){
-  const d = redisBucket.data;
-  if(key in d.strings) return 'string';
-  if(key in d.lists) return 'list';
-  if(key in d.sets) return 'set';
-  if(key in d.hashes) return 'hash';
-  if(key in d.zsets) return 'zset';
-  return null;
-}
-function rExists(key){
-  return rType(key)!==null;
-}
-function rDelKey(key){
-  let removed = 0;
-  const d=redisBucket.data;
-  ['strings','lists','sets','hashes','zsets'].forEach(k=>{ if(d[k][key]!==undefined){ delete d[k][key]; removed=1; }});
-  if(redisBucket.data.ttl[key]!==undefined) delete redisBucket.data.ttl[key];
-  return removed;
-}
-function rRename(oldKey,newKey){
-  if(!rExists(oldKey)) return false;
-  rDelKey(newKey);
-  const d=redisBucket.data;
-  if(d.strings[oldKey]!==undefined){ d.strings[newKey]=d.strings[oldKey]; delete d.strings[oldKey]; }
-  if(d.lists[oldKey]!==undefined){ d.lists[newKey]=d.lists[oldKey]; delete d.lists[oldKey]; }
-  if(d.sets[oldKey]!==undefined){ d.sets[newKey]=d.sets[oldKey]; delete d.sets[oldKey]; }
-  if(d.hashes[oldKey]!==undefined){ d.hashes[newKey]=d.hashes[oldKey]; delete d.hashes[oldKey]; }
-  if(d.zsets[oldKey]!==undefined){ d.zsets[newKey]=d.zsets[oldKey]; delete d.zsets[oldKey]; }
-  if(d.ttl[oldKey]!==undefined){ d.ttl[newKey]=d.ttl[oldKey]; delete d.ttl[oldKey]; }
-  return true;
-}
-function rAllKeys(){
-  const d=redisBucket.data;
-  return Array.from(new Set([
-    ...Object.keys(d.strings),...Object.keys(d.lists),...Object.keys(d.sets),
-    ...Object.keys(d.hashes),...Object.keys(d.zsets)
-  ])).sort();
-}
-function tokeniseRedis(s){
-  // shell-like tokenizer with quotes
-  const out=[]; let cur=''; let q=null; for(let i=0;i<s.length;i++){
-    const c=s[i];
-    if(q){
-      if(c==='\\' && i+1<s.length){ cur+=s[i+1]; i++; continue; }
-      if(c===q){ q=null; continue; }
-      cur+=c;
-    } else {
-      if(c==='"' || c==="'"){ q=c; if(cur) { out.push(cur); cur=''; } }
-      else if(/\s/.test(c)){ if(cur){ out.push(cur); cur=''; } }
-      else cur+=c;
-    }
-  }
-  if(q) throw new Error('Unterminated quoted string');
-  if(cur) out.push(cur);
-  return out;
-}
-const REDIS_WRITE = new Set(['SET','DEL','LPUSH','RPUSH','HSET','SADD','EXPIRE','PERSIST','HDEL']);
-let redisWriteCount = 0;
-function execRedis(line){
-  const d = redisBucket.data;
-  const argv = tokeniseRedis(line);
-  const cmd = (argv[0]||'').toUpperCase();
-  const a = argv.slice(1);
-  const out=[];
-  if(cmd==='CLEAR'){ clearTerminal(); return; }
-  function ok(x){ out.push(x); }
-  function arr(xs){ xs.length? xs.forEach(x=>ok(x)) : ok('(empty list or set)'); }
-  // Help
-  const HELP = {
-    SET:'SET key value',
-    GET:'GET key',
-    DEL:'DEL key [key ...]',
-    EXISTS:'EXISTS key [key ...]',
-    TYPE:'TYPE key',
-    PERSIST:'PERSIST key',
-    EXPIRE:'EXPIRE key seconds',
-    TTL:'TTL key',
-    HSET:'HSET key field value [field value ...]',
-    HGET:'HGET key field',
-    HGETALL:'HGETALL key',
-    LPUSH:'LPUSH key value [value ...]',
-    RPUSH:'RPUSH key value [value ...]',
-    LRANGE:'LRANGE key start stop',
-    SADD:'SADD key member [member ...]',
-    SMEMBERS:'SMEMBERS key',
-    SCAN:'SCAN cursor [MATCH pattern]',
-    HELP:'HELP [COMMAND]'
-  };
-  function showHelp(name){
-    if(!name){
-      ok('Supported commands:');
-      Object.keys(HELP).forEach(k=> ok(' - '+HELP[k]));
-      return;
-    }
-    const u = HELP[name.toUpperCase()];
-    ok(u? ('Usage: '+u) : 'Unknown command for HELP');
-  }
-
-  try{
-    switch(cmd){
-      case 'HELP': showHelp(a[0]); break;
-      case 'SET':{
-        if(a.length<2) throw new Error('SET requires key and value');
-        const key=a[0]; const val=a.slice(1).join(' ');
-        rDelKey(key); d.strings[key]=val; ok('OK');
-        logAOF('redis', line); redisWriteCount++; break;
-      }
-      case 'GET':{
-        if(a.length<1) throw new Error('GET requires key');
-        ok(d.strings[a[0]]!==undefined? d.strings[a[0]] : '(nil)'); break;
-      }
-      case 'DEL':{
-        if(!a.length) throw new Error('DEL requires key');
-        let n=0; a.forEach(k=>{ n+=rDelKey(k); });
-        ok('(integer) '+n); logAOF('redis', line); redisWriteCount++; break;
-      }
-      case 'EXISTS':{
-        let n=0; a.forEach(k=>{ n+= rExists(k)?1:0; }); ok('(integer) '+n); break;
-      }
-      case 'TYPE':{
-        const t=rType(a[0]); ok(t||'none'); break;
-      }
-      case 'PERSIST':{
-        const k=a[0]; if(!k) throw new Error('PERSIST requires key');
-        if(!rExists(k)) ok('(integer) 0');
-        else if(d.ttl[k]!==undefined){ delete d.ttl[k]; ok('(integer) 1'); logAOF('redis', line); redisWriteCount++; }
-        else ok('(integer) 0');
-        break;
-      }
-      case 'EXPIRE':{
-        if(a.length<2) throw new Error('EXPIRE requires key seconds');
-        const k=a[0]; const sec=parseInt(a[1],10);
-        if(!rExists(k)) ok('(integer) 0');
-        else if(!isFinite(sec)) throw new Error('seconds must be a number');
-        else if(sec<=0){ rDelKey(k); ok('(integer) 1'); }
-        else { d.ttl[k]=Date.now()+sec*1000; ok('(integer) 1'); logAOF('redis', line); redisWriteCount++; }
-        break;
-      }
-      case 'TTL':{
-        const k=a[0]; if(!k){ ok('(integer) -2'); break; }
-        if(!rExists(k)) ok('(integer) -2');
-        else if(d.ttl[k]===undefined) ok('(integer) -1');
-        else { const rem=Math.max(0, Math.ceil((d.ttl[k]-Date.now())/1000)); ok('(integer) '+rem); }
-        break;
-      }
-      case 'HSET':{
-        if(a.length<3 || (a.length-1)%2!==0) throw new Error('HSET requires key field value [field value ...]');
-        const k=a[0]; if(!(k in d.hashes)) d.hashes[k]={};
-        let added=0; for(let i=1;i<a.length;i+=2){ const f=a[i], v=a[i+1]; if(d.hashes[k][f]===undefined) added++; d.hashes[k][f]=String(v); }
-        ok('(integer) '+added); logAOF('redis', line); redisWriteCount++; break;
-      }
-      case 'HGET':{ const k=a[0], f=a[1]; const h=d.hashes[k]||{}; ok(h[f]!==undefined?h[f]:'(nil)'); break; }
-      case 'HGETALL':{
-        const k=a[0]; const h=d.hashes[k]||{}; const ent=Object.entries(h); if(!ent.length){ ok('(empty list or set)'); break; }
-        ent.forEach(([f,v],i)=>{ ok((i*2+1)+') "'+f+'"'); ok((i*2+2)+') "'+v+'"'); }); break;
-      }
-      case 'LPUSH':{
-        if(a.length<2) throw new Error('LPUSH requires key and value');
-        const k=a[0]; d.lists[k]=d.lists[k]||[]; a.slice(1).forEach(v=>d.lists[k].unshift(v));
-        ok('(integer) '+d.lists[k].length); logAOF('redis', line); redisWriteCount++; break;
-      }
-      case 'RPUSH':{
-        if(a.length<2) throw new Error('RPUSH requires key and value');
-        const k=a[0]; d.lists[k]=d.lists[k]||[]; a.slice(1).forEach(v=>d.lists[k].push(v));
-        ok('(integer) '+d.lists[k].length); logAOF('redis', line); redisWriteCount++; break;
-      }
-      case 'LRANGE':{
-        if(a.length<3) throw new Error('LRANGE requires key start stop');
-        const k=a[0], s=parseInt(a[1],10), e=parseInt(a[2],10);
-        const L=d.lists[k]||[]; let st = s<0?Math.max(L.length+s,0):s; let en=e<0?L.length+e:e; en=Math.min(en,L.length-1);
-        if(en<st || !L.length) arr([]); else arr(L.slice(st,en+1).map((v,i)=>`${i+1}) "${v}"`));
-        break;
-      }
-      case 'SADD':{
-        if(a.length<2) throw new Error('SADD requires key and member');
-        const k=a[0]; d.sets[k]=d.sets[k]||[]; const set=new Set(d.sets[k]); let added=0;
-        a.slice(1).forEach(m=>{ if(!set.has(m)){ set.add(m); added++; } });
-        d.sets[k]=Array.from(set); ok('(integer) '+added); logAOF('redis', line); redisWriteCount++; break;
-      }
-      case 'SMEMBERS':{
-        const k=a[0]; const set=new Set(d.sets[k]||[]); arr(Array.from(set).map((m,i)=>`${i+1}) "${m}"`)); break;
-      }
-      case 'SCAN':{
-        if(a.length<1) throw new Error('SCAN requires cursor');
-        let cur=parseInt(a[0],10); if(!isFinite(cur)||cur<0) cur=0;
-        let pattern='*';
-        if(a[1] && a[1].toUpperCase()==='MATCH') pattern = a[2]||'*';
-        const regex = new RegExp('^'+pattern.replace(/[.+^${}()|[\]\\]/g,'\\$&').replace(/\*/g,'.*').replace(/\?/g,'.')+'$');
-        const keys = rAllKeys().filter(k=>regex.test(k));
-        const slice = keys.slice(cur, cur+10);
-        const next = (cur+slice.length)>=keys.length ? 0 : (cur+slice.length);
-        ok('1) "'+String(next)+'"');
-        if(!slice.length){ ok('2) (empty list or set)'); } else {
-          ok('2)'); slice.forEach((k,i)=> ok('   '+(i+1)+') "'+k+'"'));
-        }
-        break;
-      }
-      case 'RENAME':{
-        if(a.length<2) throw new Error('RENAME requires oldkey newkey');
-        if(!rRename(a[0],a[1])) throw new Error('ERR no such key'); ok('OK'); logAOF('redis', line); redisWriteCount++; break;
-      }
-      case 'CLEAR': clearTerminal(); return;
-      case 'HELP': default:{
-        if(cmd==='HELP'){ showHelp(a[0]); break; }
-        throw new Error('Unknown command: '+cmd);
-      }
-    }
-  }catch(err){
-    out.unshift('(error) '+err.message);
-  }
-  print('prompt', promptLabel()+line);
-  out.forEach(x=> print('', String(x)));
-  // Writes? snapshot trigger
-  if(REDIS_WRITE.has(cmd)){
-    if(root.global.rdb?.enabled){
-      if(++redisWriteCount % (root.global.rdb.threshold||10)===0) addSnapshot();
-    }
-    saveBucket('redis'); updateLiveCount(); renderVisualizer();
-  }
-  saveBucket('redis'); recordOp('redis'); updateStorageUI();
-}
-
-/** MongoDB Simulator ***********************************************************/
-// Schema: mongoBucket.data = { databases:{ [name]:{ collections:{ [coll]:{ docs:[], indexes:[{field: 'f', order:1}] } } } }, currentDb:'default' }
-function ensureDb(n){ const d = mongoBucket.data; d.databases[n] = d.databases[n]||{ collections:{} }; }
-function ensureColl(db, c){ ensureDb(db); const colls=mongoBucket.data.databases[db].collections; colls[c] = colls[c]||{ docs:[], indexes:[] }; }
-function parseMongo(line){
-  // supports: use <db>
-  const m = line.match(/^\s*use\s+([A-Za-z0-9_\-]+)\s*$/i);
-  if(m) return { type:'use', db:m[1] };
-  // db.<coll>.<op>(args)
-  const p = line.match(/^\s*db\.([A-Za-z0-9_\-]+)\.([A-Za-z]+)\s*\(([\s\S]*)\)\s*;?\s*$/);
-  if(!p) return null;
-  return { type:'call', coll:p[1], op:p[2], args: splitArgs(p[3]) };
-}
-function splitArgs(s){
-  // split by commas not in quotes/brackets/braces
-  const out=[]; let cur=''; let depth=0; let q=null;
-  for(let i=0;i<s.length;i++){
-    const c=s[i];
-    if(q){
-      cur+=c;
-      if(c==='\\'){ if(i+1<s.length){ cur+=s[++i]; } }
-      else if(c===q) q=null;
-      continue;
-    }
-    if(c==='"'||c==="'"){ q=c; cur+=c; continue; }
-    if(c==='{'||c==='['||c==='('){ depth++; cur+=c; continue; }
-    if(c==='}'||c===']'||c===')'){ depth--; cur+=c; continue; }
-    if(c===',' && depth===0){ out.push(cur.trim()); cur=''; continue; }
-    cur+=c;
-  }
-  if(cur.trim()) out.push(cur.trim());
-  return out;
-}
-function parseJSONSafe(s){
-  // accept numbers/bools/null; if object/array, require JSON with double quotes
-  const t = s.trim();
-  if(t==='') return undefined;
-  if(t[0]==='{' || t[0]==='[') return JSON.parse(t);
-  if(t[0]==='"' || t[0]==="'"){ // normalize single quotes to double if present
-    let v = t[0]==="'" ? t.replace(/^'/,'"').replace(/'$/,'"') : t;
-    return JSON.parse(v);
-  }
-  if(/^\d+$/.test(t)) return Number(t);
-  if(/^\d+\.\d+$/.test(t)) return Number(t);
-  if(/^true|false|null$/i.test(t)) return JSON.parse(t.toLowerCase());
-  // string without quotes -> treat as string
-  return t;
-}
-function matchDoc(doc, query){
-  // equality and single-field $gt/$lt
-  const keys = Object.keys(query||{});
-  for(const k of keys){
-    const cond = query[k];
-    if(cond && typeof cond==='object' && !Array.isArray(cond)){
-      if('$gt' in cond){ if(!(doc[k] > cond['$gt'])) return false; }
-      else if('$lt' in cond){ if(!(doc[k] < cond['$lt'])) return false; }
-      else { // nested equality obj
-        if(JSON.stringify(doc[k])!==JSON.stringify(cond)) return false;
-      }
-    } else {
-      if(JSON.stringify(doc[k])!==JSON.stringify(cond)) return false;
-    }
-  }
-  return true;
-}
-function projectDoc(doc, proj){
-  if(!proj || typeof proj!=='object') return deepClone(doc);
-  const include = Object.entries(proj).filter(([,v])=>v===1).map(([k])=>k);
-  if(!include.length) return deepClone(doc);
-  const out={}; include.forEach(k=>{ if(doc[k]!==undefined) out[k]=doc[k]; });
-  if(doc._id!==undefined && !('_id' in proj) || proj._id===1) out._id = doc._id;
-  return out;
-}
-let mongoId = 1;
-function execMongo(line){
-  const parsed = parseMongo(line);
-  print('prompt', promptLabel()+line);
-  if(!parsed){ print('err','(error) Unrecognized Mongo shell command. Try HELP.'); recordOp('mongo'); return; }
-  const d = mongoBucket.data;
-  try{
-    if(parsed.type==='use'){
-      d.currentDb = parsed.db; ensureDb(d.currentDb);
-      print('',`switched to db ${d.currentDb}`);
-    }else{
-      ensureColl(d.currentDb, parsed.coll);
-      const coll = d.databases[d.currentDb].collections[parsed.coll];
-      const op = parsed.op.toLowerCase();
-      const args = parsed.args.map(parseJSONSafe);
-      switch(op){
-        case 'insertone':{
-          const doc = args[0]; if(!doc || typeof doc!=='object') throw new Error('insertOne requires a document');
-          if(doc._id===undefined) doc._id = mongoId++;
-          coll.docs.push(doc);
-          print('ok', JSON.stringify({ acknowledged:true, insertedId: doc._id }, null, 2));
-          logAOF('mongo', `db.${parsed.coll}.insertOne(${JSON.stringify(doc)})`);
-          saveBucket('mongo'); updateLiveCount(); renderVisualizer(); break;
-        }
-        case 'insertmany':{
-          const arr = args[0]; if(!Array.isArray(arr)) throw new Error('insertMany requires an array');
-          arr.forEach(doc=>{ if(doc._id===undefined) doc._id=mongoId++; coll.docs.push(doc); });
-          print('ok', JSON.stringify({ acknowledged:true, insertedCount: arr.length }, null, 2));
-          logAOF('mongo', `db.${parsed.coll}.insertMany(${JSON.stringify(arr)})`);
-          saveBucket('mongo'); updateLiveCount(); renderVisualizer(); break;
-        }
-        case 'find':{
-          const q = args[0]||{}; const proj = args[1]||null;
-          const hits = coll.docs.filter(doc=>matchDoc(doc,q)).map(doc=>projectDoc(doc,proj));
-          print('', JSON.stringify(hits, null, 2));
-          break;
-        }
-        case 'updateone':{
-          const filter = args[0]||{}; const upd = args[1]||{};
-          const idx = coll.docs.findIndex(doc=>matchDoc(doc,filter));
-          if(idx<0){ print('', JSON.stringify({ acknowledged:true, matchedCount:0, modifiedCount:0 }, null, 2)); break; }
-          const set = (upd && typeof upd==='object' && upd.$set) || {};
-          Object.entries(set).forEach(([k,v])=> coll.docs[idx][k]=v);
-          print('ok', JSON.stringify({ acknowledged:true, matchedCount:1, modifiedCount:1 }, null, 2));
-          logAOF('mongo', `db.${parsed.coll}.updateOne(${JSON.stringify(filter)},{"$set":${JSON.stringify(set)}})`);
-          saveBucket('mongo'); renderVisualizer(); break;
-        }
-        case 'deleteone':{
-          const filter = args[0]||{};
-          const idx = coll.docs.findIndex(doc=>matchDoc(doc,filter));
-          if(idx<0){ print('', JSON.stringify({ acknowledged:true, deletedCount:0 }, null, 2)); break; }
-          coll.docs.splice(idx,1);
-          print('ok', JSON.stringify({ acknowledged:true, deletedCount:1 }, null, 2));
-          logAOF('mongo', `db.${parsed.coll}.deleteOne(${JSON.stringify(filter)})`);
-          saveBucket('mongo'); updateLiveCount(); renderVisualizer(); break;
-        }
-        case 'count':{
-          print('', String(coll.docs.length));
-          break;
-        }
-        case 'createindex':{
-          const spec = args[0]; const kv = Object.entries(spec||{})[0];
-          if(!kv) throw new Error('createIndex requires {field:1}');
-          coll.indexes.push({ field: kv[0], order: Number(kv[1])||1 });
-          print('ok', JSON.stringify({ createdCollectionAutomatically:false, numIndexesAfter: coll.indexes.length }, null, 2));
-          logAOF('mongo', `db.${parsed.coll}.createIndex(${JSON.stringify(spec)})`);
-          saveBucket('mongo'); renderVisualizer(); break;
-        }
-        case 'help': default:{
-          if(op==='help'){
-            print('', 'Supported: use <db>; db.<coll>.insertOne(doc); insertMany([..]); find(q,proj); updateOne(filter,{"$set":{..}}); deleteOne(filter); count(); createIndex({field:1})');
-          }else{
-            throw new Error('Unknown operation: '+parsed.op);
-          }
-        }
-      }
-    }
-  }catch(err){
-    print('err', '(error) '+err.message);
-  }
-  recordOp('mongo'); updateStorageUI();
-}
-
-/** Mongo TTL Sweeper (expiresAt field) *****************************************/
-function sweepMongoTTL(){
-  const d = mongoBucket.data;
-  Object.keys(d.databases).forEach(db=>{
-    Object.entries(d.databases[db].collections).forEach(([c,coll])=>{
-      const now = Date.now();
-      const before = coll.docs.length;
-      coll.docs = coll.docs.filter(doc=>{
-        if(doc && ('expiresAt' in doc)){
-          const v = doc.expiresAt;
-          const t = typeof v==='string' ? Date.parse(v) : Number(v);
-          if(isFinite(t) && t<=now) return false;
-        }
-        return true;
-      });
-      if(coll.docs.length!==before){ saveBucket('mongo'); if(db===d.currentDb) renderVisualizer(); updateLiveCount(); }
-    });
-  });
-}
-
-/** Cassandra Simulator *********************************************************/
-// Schema: cassBucket.data = { keyspaces:{ ks:{ tables:{ t:{ columns:{name:type}, primaryKey:'col', rows:{[pkVal]:{...}}, ttl:{ [pkVal]: expiryMs } } } } }, currentKs:'system' }
-function ensureKs(ks){ const d=cassBucket.data; d.keyspaces[ks]=d.keyspaces[ks]||{ tables:{} }; }
-function ensureTable(ks, t){ ensureKs(ks); const ksObj=cassBucket.data.keyspaces[ks]; ksObj.tables[t]=ksObj.tables[t]||{ columns:{}, primaryKey:null, rows:{}, ttl:{} }; }
-function parseCql(line){
-  const s=line.trim(); if(!s) return null;
-  return s;
-}
-function cqlTypeCast(type, raw){
-  if(type==='int') return parseInt(raw,10);
-  if(type==='timestamp'){
-    if(/^\d+$/.test(raw)) return Number(raw);
-    if(/^'.*'$|^".*"$/.test(raw)) return Date.parse(raw.slice(1,-1));
-    return Date.parse(raw);
-  }
-  // text
-  if(/^'.*'$|^".*"$/.test(raw)) return raw.slice(1,-1);
-  return String(raw);
-}
-function parseColsVals(colsStr, valsStr, table){
-  const cols = colsStr.split(',').map(s=>s.trim());
-  // split values respecting quotes
-  const vals = splitArgs(valsStr).map(s=>s.trim());
-  const row={};
-  cols.forEach((c,i)=>{
-    const type = table.columns[c];
-    row[c] = cqlTypeCast(type, vals[i]);
-  });
-  return row;
-}
-function execCql(line){
-  const s = parseCql(line);
-  print('prompt', promptLabel()+line);
-  if(!s){ recordOp('cassandra'); return; }
-  const d = cassBucket.data;
-  try{
-    // CREATE KEYSPACE
-    let m;
-    if(m = s.match(/^CREATE\s+KEYSPACE\s+([A-Za-z0-9_]+)\s+WITH\s+replication\s*=\s*(\{[\s\S]*\})\s*;?$/i)){
-      const ks=m[1]; const repl=m[2]; ensureKs(ks); (cassBucket.data.keyspaces[ks].replication = repl);
-      print('ok','Keyspace '+ks+' created.');
-      logAOF('cassandra', `CREATE KEYSPACE ${ks} WITH replication = ${repl}`);
-      saveBucket('cassandra'); renderVisualizer(); return recordOp('cassandra'), updateStorageUI();
-    }
-    // USE ks
-    if(m = s.match(/^USE\s+([A-Za-z0-9_]+)\s*;?$/i)){
-      const ks=m[1]; ensureKs(ks); d.currentKs = ks; saveBucket('cassandra');
-      print('', 'Using keyspace '+ks); renderVisualizer(); return recordOp('cassandra');
-    }
-    // CREATE TABLE
-    if(m = s.match(/^CREATE\s+TABLE\s+([A-Za-z0-9_]+)\s*\(([\s\S]+)\)\s*;?$/i)){
-      const t=m[1]; ensureTable(d.currentKs,t);
-      const inner=m[2];
-      // split by commas not in parens
-      const parts = splitArgs(inner);
-      const table = d.keyspaces[d.currentKs].tables[t];
-      parts.forEach(p=>{
-        const pk = p.match(/PRIMARY\s+KEY\s*\(\s*([A-Za-z0-9_]+)\s*\)/i);
-        if(pk){ table.primaryKey = pk[1]; }
-        else{
-          const mm = p.trim().match(/^([A-Za-z0-9_]+)\s+(text|int|timestamp)$/i);
-          if(!mm) throw new Error('Bad column definition: '+p);
-          table.columns[mm[1]] = mm[2].toLowerCase();
-        }
-      });
-      if(!table.primaryKey) throw new Error('PRIMARY KEY required');
-      print('ok', 'Table '+t+' created.');
-      logAOF('cassandra', `CREATE TABLE ${t} (...)`);
-      saveBucket('cassandra'); renderVisualizer(); return recordOp('cassandra'), updateStorageUI();
-    }
-    // INSERT INTO
-    if(m = s.match(/^INSERT\s+INTO\s+([A-Za-z0-9_]+)\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)\s*(USING\s+TTL\s+(\d+))?\s*;?$/i)){
-      const t=m[1]; ensureTable(d.currentKs,t); const table=d.keyspaces[d.currentKs].tables[t];
-      const row = parseColsVals(m[2], m[3], table);
-      const pk = table.primaryKey; if(pk==null) throw new Error('PRIMARY KEY not set');
-      const key = String(row[pk]);
-      table.rows[key] = Object.assign({ }, table.rows[key]||{}, row);
-      if(m[5]){ const ttlSec=Number(m[5]); table.ttl[key] = Date.now()+ttlSec*1000; }
-      print('ok','1 row applied.');
-      logAOF('cassandra', `INSERT INTO ${t} (...)${m[5]?' USING TTL '+m[5]:''}`);
-      saveBucket('cassandra'); updateLiveCount(); renderVisualizer(); return recordOp('cassandra'), updateStorageUI();
-    }
-    // SELECT
-    if(m = s.match(/^SELECT\s+(.+)\s+FROM\s+([A-Za-z0-9_]+)\s+WHERE\s+([A-Za-z0-9_]+)\s*=\s*([^;]+)\s*;?$/i)){
-      const cols=m[1].trim(); const t=m[2]; const pkField=m[3]; const pkValRaw=m[4].trim();
-      ensureTable(d.currentKs,t); const table=d.keyspaces[d.currentKs].tables[t];
-      if(pkField!==table.primaryKey) throw new Error('Only primary-key lookups supported');
-      const key = String(cqlTypeCast(table.columns[pkField]||'text', pkValRaw));
-      const row = table.rows[key];
-      if(!row){ print('', '(0 rows)'); return recordOp('cassandra'); }
-      const showCols = cols==='*'? Object.keys(table.columns) : cols.split(',').map(s=>s.trim());
-      // render compact table
-      const header = showCols.join(' | ');
-      const vals = showCols.map(c=> row[c]===undefined? 'null' : String(row[c]));
-      print('', header);
-      print('', vals.join(' | '));
-      print('', '(1 row)');
-      return recordOp('cassandra');
-    }
-    // DELETE
-    if(m = s.match(/^DELETE\s+FROM\s+([A-Za-z0-9_]+)\s+WHERE\s+([A-Za-z0-9_]+)\s*=\s*([^;]+)\s*;?$/i)){
-      const t=m[1]; const pkField=m[2]; const raw=m[3].trim();
-      ensureTable(d.currentKs,t); const table=d.keyspaces[d.currentKs].tables[t];
-      if(pkField!==table.primaryKey) throw new Error('Only primary-key deletes supported');
-      const key = String(cqlTypeCast(table.columns[pkField]||'text', raw));
-      const existed = !!table.rows[key];
-      delete table.rows[key]; delete table.ttl[key];
-      print('ok', existed?'1 row deleted.':'0 rows deleted.');
-      logAOF('cassandra', `DELETE FROM ${t} WHERE ${pkField}=${raw}`);
-      saveBucket('cassandra'); updateLiveCount(); renderVisualizer(); return recordOp('cassandra'), updateStorageUI();
-    }
-    // ALTER TABLE ADD
-    if(m = s.match(/^ALTER\s+TABLE\s+([A-Za-z0-9_]+)\s+ADD\s+([A-Za-z0-9_]+)\s+(text|int|timestamp)\s*;?$/i)){
-      const t=m[1]; const col=m[2]; const type=m[3].toLowerCase(); ensureTable(d.currentKs,t);
-      const table=d.keyspaces[d.currentKs].tables[t];
-      table.columns[col]=type;
-      // existing rows: leave undefined/null
-      print('ok','Altered table '+t+'.');
-      logAOF('cassandra', `ALTER TABLE ${t} ADD ${col} ${type}`);
-      saveBucket('cassandra'); renderVisualizer(); return recordOp('cassandra'), updateStorageUI();
-    }
-    // HELP / CLEAR
-    if(/^HELP\s*;?$/i.test(s)){
-      print('', 'Supported:');
-      print('', 'CREATE KEYSPACE ks WITH replication = {...};');
-      print('', 'USE ks;');
-      print('', 'CREATE TABLE t (col type, ..., PRIMARY KEY (pk));');
-      print('', 'INSERT INTO t (cols...) VALUES (... ) [USING TTL <sec>];');
-      print('', 'SELECT cols FROM t WHERE pk = ...;');
-      print('', 'DELETE FROM t WHERE pk = ...;');
-      print('', 'ALTER TABLE t ADD col type;');
-      return recordOp('cassandra');
-    }
-    if(/^CLEAR\s*;?$/i.test(s)){ clearTerminal(); return recordOp('cassandra'); }
-    throw new Error('Unsupported CQL. Try HELP.');
-  }catch(err){
-    print('err','(error) '+err.message);
-  }
-}
-
-/** Cassandra TTL Sweep *********************************************************/
-function sweepCassandraTTL(){
-  const d = cassBucket.data; const now = Date.now(); let changed=false;
-  Object.values(d.keyspaces).forEach(ks=>{
-    Object.values(ks.tables).forEach(t=>{
-      Object.entries(t.ttl).forEach(([pk,exp])=>{
-        if(exp<=now){ delete t.rows[pk]; delete t.ttl[pk]; changed=true; }
-      });
-    });
-  });
-  if(changed){ saveBucket('cassandra'); if(activeDB==='cassandra') renderVisualizer(); updateLiveCount(); }
-}
-
-/** Router **********************************************************************/
-function execute(line){
-  const trimmed = line.trim();
-  if(!trimmed) return;
-  if(/^(CLEAR)$/i.test(trimmed)){ clearTerminal(); return; }
-  if(/^(HELP)$/i.test(trimmed)){
-    if(activeDB==='redis'){
-      print('prompt', promptLabel()+line);
-      print('','Redis HELP — SET, GET, DEL, EXISTS, TYPE, PERSIST, EXPIRE, TTL, HSET, HGET, HGETALL, LPUSH, RPUSH, LRANGE, SADD, SMEMBERS, SCAN, HELP, CLEAR');
-      recordOp('redis'); return;
-    }
-    if(activeDB==='mongo'){
-      print('prompt', promptLabel()+line);
-      print('','Mongo HELP — use <db>; db.<coll>.insertOne(doc); insertMany([...]); find(query,projection); updateOne(filter,{$set:{}}); deleteOne(filter); count(); createIndex({field:1}); CLEAR');
-      recordOp('mongo'); return;
-    }
-    if(activeDB==='cassandra'){
-      print('prompt', promptLabel()+line);
-      print('','Cassandra HELP — CREATE KEYSPACE; USE; CREATE TABLE; INSERT INTO ... USING TTL; SELECT ... WHERE pk=...; DELETE FROM ... WHERE pk=...; ALTER TABLE ADD; CLEAR');
-      recordOp('cassandra'); return;
-    }
-  }
-  try{
-    if(activeDB==='redis') execRedis(trimmed);
-    else if(activeDB==='mongo') execMongo(trimmed);
-    else if(activeDB==='cassandra') execCql(trimmed);
-  }catch(err){
-    print('err','(error) '+err.message);
-  }
-}
-
-/** Visualizer ******************************************************************/
-function updateLiveCount(){
-  let n=0;
-  if(activeDB==='redis'){
-    const d=redisBucket.data; n = rAllKeys().length;
-  } else if(activeDB==='mongo'){
-    const m=mongoBucket.data; const db = m.databases[m.currentDb];
-    n = Object.values(db.collections).reduce((s,c)=>s+c.docs.length,0);
-  } else {
-    const c=cassBucket.data; const ks=c.keyspaces[c.currentKs];
-    n = Object.values(ks.tables).reduce((s,t)=>s+Object.keys(t.rows).length,0);
-  }
-  $('#liveCount').textContent = n;
-}
-function renderAOF(){
-  const cont = $('#aofLog'); cont.innerHTML='';
-  root.aofLog.forEach(entry=>{
-    const d = new Date(entry.t).toLocaleTimeString();
-    cont.append(el('div',{class:'line'}, `[${d}] ${entry.line}`));
-  });
-}
-function renderSnapshots(){
-  const cont = $('#snapshots'); cont.innerHTML='';
-  root.snapshots.forEach(s=>{
-    const time = new Date(s.t).toLocaleTimeString();
-    cont.append(el('div',{class:'snap'}, `Snapshot ${time} — keys: ${Object.keys(s.data.strings||{}).length + Object.keys(s.data.lists||{}).length + Object.keys(s.data.sets||{}).length + Object.keys(s.data.hashes||{}).length + Object.keys(s.data.zsets||{}).length}`));
-  });
-}
-function renderVisualizer(){
-  const box = $('#viz'); box.innerHTML='';
-  if(activeDB==='redis'){
-    const d = redisBucket.data; const keys = rAllKeys();
-    const list = el('div',{class:'list'});
-    if(!keys.length){ list.append(el('div',{class:'mini'},'No keys. Try: SET key value')); }
-    keys.forEach(k=>{
-      const t=rType(k); const ttl = d.ttl[k]; const rem = ttl!==undefined? Math.max(0, Math.ceil((ttl-Date.now())/1000)) : null;
-      const row = el('div',{class:'line'}, `${k}  [${t}] ${rem===null?'': '  TTL: '+rem+'s'}`);
-      if(rem!==null) row.append(el('span',{class:'ttl',text:''}));
-      list.append(row);
-    });
-    const table = el('table',{class:'table'}); table.append(el('caption',{text:'Redis overview'}));
-    const head = el('tr',{}, el('th',{text:'Type'}), el('th',{text:'Count'}));
-    const tb = el('tbody'); tb.append(
-      el('tr',{}, el('td',{text:'strings'}), el('td',{text:String(Object.keys(d.strings).length)})),
-      el('tr',{}, el('td',{text:'lists'}), el('td',{text:String(Object.keys(d.lists).length)})),
-      el('tr',{}, el('td',{text:'sets'}), el('td',{text:String(Object.keys(d.sets).length)})),
-      el('tr',{}, el('td',{text:'hashes'}), el('td',{text:String(Object.keys(d.hashes).length)})),
-      el('tr',{}, el('td',{text:'zsets'}), el('td',{text:String(Object.keys(d.zsets).length)}))
-    );
-    const thead = el('thead'); thead.append(head); table.append(thead,tb);
-    box.append(el('div',{class:'mini',text:'Keys & TTLs'}), list, el('div',{style:'height:8px'}), table);
-  } else if(activeDB==='mongo'){
-    const d = mongoBucket.data; const db = d.databases[d.currentDb] || { collections:{} };
-    const title = el('div',{class:'mini'}, `db: ${d.currentDb}`);
-    const table = el('table',{class:'table'});
-    const thead=el('thead',{}, el('tr',{}, el('th',{text:'Collection'}), el('th',{text:'Count'}), el('th',{text:'Indexes'}), el('th',{text:'Sample (first doc)'})));
-    const tb = el('tbody');
-    Object.entries(db.collections).forEach(([name,coll])=>{
-      const sample= coll.docs[0]? JSON.stringify(coll.docs[0], null, 0) : '';
-      tb.append(el('tr',{},
-        el('td',{text:name}), el('td',{text:String(coll.docs.length)}),
-        el('td',{text: coll.indexes.map(i=>i.field+':'+i.order).join(', ') || '—'}),
-        el('td',{text: sample || '—'})
-      ));
-    });
-    table.append(thead,tb);
-    box.append(title, table);
-  } else {
-    const d = cassBucket.data; const ks = d.keyspaces[d.currentKs] || { tables:{} };
-    const title = el('div',{class:'mini'}, `keyspace: ${d.currentKs}`);
-    const table = el('table',{class:'table'});
-    const thead=el('thead',{}, el('tr',{}, el('th',{text:'Table'}), el('th',{text:'Columns'}), el('th',{text:'Rows'}), el('th',{text:'Primary Key'})));
-    const tb = el('tbody');
-    Object.entries(ks.tables).forEach(([name,t])=>{
-      tb.append(el('tr',{},
-        el('td',{text:name}),
-        el('td',{text:Object.entries(t.columns).map(([c,ty])=> c+':'+ty).join(', ')}),
-        el('td',{text:String(Object.keys(t.rows).length)}),
-        el('td',{text: t.primaryKey || '—'})
-      ));
-    });
-    table.append(thead,tb);
-    box.append(title, table);
-  }
-  updateLiveCount();
-}
-
-/** Import / Export *************************************************************/
-$('#exportBtn').addEventListener('click', ()=>{
-  const payload = {
-    formatVersion:2,
-    root, redis:redisBucket, mongo:mongoBucket, cassandra:cassBucket,
-  };
-  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
-  const a = el('a',{href:URL.createObjectURL(blob), download:'dbPlayground-v2-export.json'});
-  document.body.append(a); a.click(); a.remove();
-});
-$('#importFile').addEventListener('change', async (e)=>{
-  const f=e.target.files[0]; if(!f) return;
-  try{
-    const text = await f.text(); const obj = JSON.parse(text);
-    if(obj.formatVersion!==2) throw new Error('Invalid formatVersion');
-    if(!obj.root||!obj.redis||!obj.mongo||!obj.cassandra) throw new Error('Missing sections');
-    root = obj.root; redisBucket=obj.redis; mongoBucket=obj.mongo; cassBucket=obj.cassandra;
-    saveRoot(); saveBucket('redis'); saveBucket('mongo'); saveBucket('cassandra');
-    setAOF(root.global?.aof||false); setRDB(root.global?.rdb?.enabled||false);
-    $('#rdbThreshold').value = root.global?.rdb?.threshold || 10;
-    clearTerminal(); print('', 'Import successful.');
-    renderAOF(); renderSnapshots(); renderVisualizer(); updateStorageUI();
-  }catch(err){
-    print('err','(error) Import failed: '+err.message);
-  } finally { e.target.value=''; }
-});
-
-/** TTL Tickers *****************************************************************/
-setInterval(()=>{
-  // Redis expirations
-  const d=redisBucket.data; const now=Date.now(); let changed=false;
-  Object.entries(d.ttl).forEach(([k,exp])=>{
-    if(exp<=now){ rDelKey(k); changed=true; print('', `Key expired: ${k}`); }
-  });
-  if(changed){ saveBucket('redis'); if(activeDB==='redis') renderVisualizer(); updateLiveCount(); }
-  // Mongo & Cassandra sweepers
-  sweepMongoTTL(); sweepCassandraTTL();
-  updateOpsUI();
-}, 1000);
-
-/** Copy helpers for Quick Start ************************************************/
-document.querySelectorAll('pre.list').forEach(pre=>{
-  pre.style.cursor='pointer';
-  pre.addEventListener('click', ()=>{
-    const text = pre.textContent.replace(/\n\s+\n/g,'\n').trim();
-    navigator.clipboard.writeText(text);
-    print('', 'Copied block to clipboard. Paste into terminal to run.');
-  });
-});
-
-/** Initial UI ******************************************************************/
-setAOF(root.global?.aof||false);
-setRDB(root.global?.rdb?.enabled||false);
-$('#rdbThreshold').value = root.global?.rdb?.threshold || 10;
-renderAOF(); renderSnapshots(); renderVisualizer(); updateStorageUI();
-print('muted', promptLabel()+'Tip: Paste commands from Quick Start above.');
-cmd.focus();
-
-</script>
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
